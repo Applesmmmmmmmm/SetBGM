@@ -33,16 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 addon.name      = 'setbgm'
 addon.author    = 'Seth VanHeulen (Acacia@Odin) | Converted by Shinzaku | Ashita V4 port by Apples_mmmmmmmm'
 addon.version   = '1.2.4'
-addon.desc      = [[Allows you to set various types of music in the game.setbgm list [music]
-                    Lists all of the available songs in the game.
-                    /setbgm list type
-                    Lists the different types of music you can set.
-                    /setbgm <song id>
-                    Sets the background music given by the ID.
-                    /setbgm <song id> <music type id>
-                    Sets only a given type of music.
-                    /setbgm <song id> <song id> <song id> <song id> <song id> <song id> <song id> <song id>
-                    Sets all types of music at once.]]
+addon.desc      = [[Allows you to set various types of music in the game.setbgm dropdown menu. [music] ]]
 addon.link    = 'https://github.com/Applesmmmmmmmm/SetBGM';
 
 local imgui = require('imgui');
