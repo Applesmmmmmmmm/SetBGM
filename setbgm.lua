@@ -32,9 +32,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 addon.name      = 'setbgm'
 addon.author    = 'Seth VanHeulen (Acacia@Odin) | Converted by Shinzaku | Ashita V4 port by Apples_mmmmmmmm'
-addon.version   = '1.2.4'
+addon.version   = '1.2.5'
 addon.desc      = [[Allows you to set various types of music in the game.setbgm dropdown menu. [music] ]]
-addon.link    = 'https://github.com/Applesmmmmmmmm/SetBGM';
+addon.link      = 'https://github.com/Applesmmmmmmmm/SetBGM';
 
 local imgui = require('imgui');
 require('common');
