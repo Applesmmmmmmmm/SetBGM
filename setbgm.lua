@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 addon.name      = 'setbgm'
 addon.author    = 'Seth VanHeulen (Acacia@Odin) | Converted by Shinzaku | Ashita V4 port by Apples_mmmmmmmm'
-addon.version   = '1.2.7'
+addon.version   = '1.2.8'
 addon.desc      = [[/setbgm opens an ImGUI window to set music in loop or autoplay, sequentially or randomly.]]
 addon.link    = 'https://github.com/Applesmmmmmmmm/SetBGM';
 
@@ -78,8 +78,8 @@ local default_settings = T{
 	auto_play_type = auto_play_type_options.loop,	
 	is_imgui_open = false,
 	play_at_launch = false,	
-	imgui_SFX_vol = {100},
-	imgui_BGM_vol = {100};
+	imgui_SFX_vol = T{100},
+	imgui_BGM_vol = T{100};
 };
 
 ffi.cdef[[
@@ -104,6 +104,22 @@ local function GetVolumeBGM()
 	return tonumber(config.get(10));
 end
 
+--min:0, max:100, default:100
+local function SetVolumeSFX(newVol)
+	if(not config.set) then	print("Failed to set volume, set function invalid pointer"); return; end
+	if(not newVol) then print("Failed to set volume, newVol nil"); return; end
+	newVol = tonumber(newVol);
+	config.set(9, math.clamp(newVol, 0, 100));
+end
+
+--min:0, max:100, default:100
+local function SetVolumeBGM(newVol)
+	if(not config.set) then	print("Failed to set volume, set function invalid pointer"); return; end
+	if(not newVol) then print("Failed to set volume, newVol nil"); return; end
+	newVol = tonumber(newVol);
+	config.set(10, math.clamp(newVol, 0, 100));
+end
+
 ashita.events.register('load', 'load_cb', function ()
 	s = settingsMan.load(default_settings);
 
@@ -113,13 +129,14 @@ ashita.events.register('load', 'load_cb', function ()
     config.set = ffi.cast('set_config_value_t', ashita.memory.find('FFXiMain.dll', 0, '85C974??8B4424088B5424045052E8????????C383C8FFC3', -6, 0));
 	assert(config.get ~= nil, chat.header('config'):append(chat.error('Error: Failed to locate required \'get\' function pointer.')));
     assert(config.set ~= nil, chat.header('config'):append(chat.error('Error: Failed to locate required \'set\' function pointer.')));
-
-	s.imgui_SFX_vol[1] = GetVolumeSFX();
-	s.imgui_BGM_vol[1] = GetVolumeBGM();
+	
+	SetVolumeSFX(s.imgui_SFX_vol[1]);	
+	SetVolumeBGM(s.imgui_BGM_vol[1]);	
+	
 end);
 
 ashita.events.register('unload', 'unload_cb', function ()
-	settingsMan.save();
+	settingsMan.save();	
 end);
 
 local function SetAllMusic()
@@ -161,21 +178,7 @@ local function SetAllMusicFake()
 	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 7, song_ID_fake):totable());
 end
 
---min:0, max:100, default:100
-local function SetVolumeSFX(newVol)
-	if(not config.set) then	print("Failed to set volume, set function invalid pointer"); return; end
-	if(not newVol) then print("Failed to set volume, newVol nil"); return; end
-	newVol = tonumber(newVol);
-	config.set(9, math.clamp(newVol, 0, 100));
-end
 
---min:0, max:100, default:100
-local function SetVolumeBGM(newVol)
-	if(not config.set) then	print("Failed to set volume, set function invalid pointer"); return; end
-	if(not newVol) then print("Failed to set volume, newVol nil"); return; end
-	newVol = tonumber(newVol);
-	config.set(10, math.clamp(newVol, 0, 100));
-end
 
 local function DisplayHelp()
 	print(string.format('\30\70SetBGM imgui window: /setbgm'));
@@ -203,7 +206,8 @@ local function NowPlayingDelayed()
 	end
 end
 
-local function NowPlaying()	
+local function NowPlaying()
+	if(s.current_song_ID == 0) then return; end
 	SetAllMusicFake();
 	NowPlayingDelayed:once(.9);
 end
