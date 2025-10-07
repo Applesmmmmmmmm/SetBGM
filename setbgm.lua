@@ -32,275 +32,212 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 addon.name      = 'setbgm'
 addon.author    = 'Seth VanHeulen (Acacia@Odin) | Converted by Shinzaku | Ashita V4 port by Apples_mmmmmmmm'
-addon.version   = '1.2.5'
-addon.desc      = [[Allows you to set various types of music in the game.setbgm dropdown menu. [music] ]]
-addon.link      = 'https://github.com/Applesmmmmmmmm/SetBGM';
+addon.version   = '1.2.6'
+addon.desc      = [[/setbgm opens an ImGUI window to set music in loop or autoplay, sequentially or randomly.]]
+addon.link    = 'https://github.com/Applesmmmmmmmm/SetBGM';
 
-local imgui = require('imgui');
 require('common');
+local imgui = require('imgui');
+local packetManager = AshitaCore:GetPacketManager();
+local ffi = require('ffi');
+local chat = require('chat');
+local data = require('data')
 
-local music_types = {
-    [0] = 'Idle (Day)',
-    [1] = 'Idle (Night)',
-    [2] = 'Battle (Solo)',
-    [3] = 'Battle (Party)',
-    [4] = 'Chocobo',
-    [5] = 'Death',
-    [6] = 'Mog House',
-    [7] = 'Fishing'
-};
-
-local songs = {
-    [40]='Cloister of Time and Souls',
-    [41]='Royal Wanderlust',
-    [42]='Snowdrift Waltz',
-    [43]='Troubled Shadows',
-    [44]='Where Lords Rule Not',
-    [45]='Summers Lost',
-    [46]='Goddess Divine',
-    [47]='Echoes of Creation',
-    [48]='Main Theme',
-    [49]='Luck of the Mog',
-    [50]='Feast of the Ladies',
-    [51]='Abyssea - Scarlet Skies, Shadowed Plains',
-    [52]='Melodies Errant',
-    [53]='Shinryu',
-    [54]='Everlasting Bonds',
-    [55]='Provenance Watcher',
-    [56]='Where it All Begins',
-    [57]='Steel Sings, Blades Dance',
-    [58]='A New Direction',
-    [59]='The Pioneers',
-    [60]='Into Lands Primeval - Ulbuka',
-    [61]="Water's Umbral Knell",
-    [62]='Keepers of the Wild',
-    [63]='The Sacred City of Adoulin',
-    [64]='Breaking Ground',
-    [65]='Hades',
-    [66]='Arciela',
-    [67]='Mog Resort',
-    [68]='Worlds Away',
-    [69]="Distant Worlds (Nanaa Mihgo's version)",
-    [70]='Monstrosity',
-    [71]="The Pioneers (Nanaa Mihgo's version)",
-    [72]='The Serpentine Labyrinth',
-    [73]='The Divine',
-    [74]='Clouds Over Ulbuka',
-    [75]='The Price',
-    [76]='Forever Today',
-    [77]='Distant Worlds (Instrumental)',
-    [78]='Forever Today (Instrumental)',
-    [79]='Iroha',
-    [80]='The Boundless Black',
-    [81]='Isle of the Gods',
-    [82]='Wail of the Void',
-    [83]="Rhapsodies of Vana'diel",
-    [84]="Mount (Ability)",
-    [85]="Ambuscade",
-    [86]='Awakening (FFRK)',
-    [87]='Omen - Unknown Track Title',
-    [88]='Dynamis Divergence - Unknown Track Title',
-    [89]='Dynamis Divergence - Unknown Track Title',
-    [101]='Battle Theme',
-    [102]='Battle in the Dungeon #2',
-    [103]='Battle Theme #2',
-    [104]='A Road Once Traveled',
-    [105]='Mhaura',
-    [106]='Voyager',
-    [107]="The Kingdom of San d'Oria",
-    [108]="Vana'diel March",
-    [109]='Ronfaure',
-    [110]='The Grand Duchy of Jeuno',
-    [111]='Blackout',
-    [112]='Selbina',
-    [113]='Sarutabaruta',
-    [114]='Batallia Downs',
-    [115]='Battle in the Dungeon',
-    [116]='Gustaberg',
-    [117]="Ru'Lude Gardens",
-    [118]='Rolanberry Fields',
-    [119]='Awakening',
-    [120]="Vana'diel March #2",
-    [121]='Shadow Lord',
-    [122]='One Last Time',
-    [123]='Hopelessness',
-    [124]='Recollection',
-    [125]='Tough Battle',
-    [126]='Mog House',
-    [127]='Anxiety',
-    [128]='Airship',
-    [129]='Hook, Line and Sinker',
-    [130]='Tarutaru Female',
-    [131]='Elvaan Female',
-    [132]='Elvaan Male',
-    [133]='Hume Male',
-    [134]='Yuhtunga Jungle',
-    [135]='Kazham',
-    [136]='The Big One',
-    [137]='A Realm of Emptiness',
-    [138]="Mercenaries' Delight",
-    [139]='Delve',
-    [140]='Wings of the Goddess',
-    [141]='The Cosmic Wheel',
-    [142]='Fated Strife -Besieged-',
-    [143]='Hellriders',
-    [144]='Rapid Onslaught -Assault-',
-    [145]='Encampment Dreams',
-    [146]='The Colosseum',
-    [147]='Eastward Bound...',
-    [148]='Forbidden Seal',
-    [149]='Jeweled Boughs',
-    [150]='Ululations from Beyond',
-    [151]='The Federation of Windurst',
-    [152]='The Republic of Bastok',
-    [153]='Prelude',
-    [154]='Metalworks',
-    [155]='Castle Zvahl',
-    [156]="Chateau d'Oraguille",
-    [157]='Fury',
-    [158]='Sauromugue Champaign',
-    [159]='Sorrow',
-    [160]='Repression (Memoro de la Stono)',
-    [161]='Despair (Memoro de la Stono)',
-    [162]='Heavens Tower',
-    [163]='Sometime, Somewhere',
-    [164]='Xarcabard',
-    [165]='Galka',
-    [166]='Mithra',
-    [167]='Tarutaru Male',
-    [168]='Hume Female',
-    [169]='Regeneracy',
-    [170]='Buccaneers',
-    [171]='Altepa Desert',
-    [172]='Black Coffin',
-    [173]='Illusions in the Mist',
-    [174]='Whispers of the Gods',
-    [175]="Bandits' Market",
-    [176]='Circuit de Chocobo',
-    [177]='Run Chocobo, Run!',
-    [178]='Bustle of the Capital',
-    [179]="Vana'diel March #4",
-    [180]='Thunder of the March',
-    [181]='Dash de Chocobo (Low Quality)',
-    [182]='Stargazing',
-    [183]="A Puppet's Slumber",
-    [184]='Eternal Gravestone',
-    [185]='Ever-Turning Wheels',
-    [186]='Iron Colossus',
-    [187]='Ragnarok',
-    [188]='Choc-a-bye Baby',
-    [189]='An Invisible Crown',
-    [190]="The Sanctuary of Zi'Tah",
-    [191]='Battle Theme #3',
-    [192]='Battle in the Dungeon #3',
-    [193]='Tough Battle #2',
-    [194]='Bloody Promises',
-    [195]='Belief',
-    [196]='Fighters of the Crystal',
-    [197]='To the Heavens',
-    [198]="Eald'narche",
-    [199]="Grav'iton",
-    [200]='Hidden Truths',
-    [201]='End Theme',
-    [202]='Moongate (Memoro de la Stono)',
-    [203]='Ancient Verse of Uggalepih',
-    [204]="Ancient Verse of Ro'Maeve",
-    [205]='Ancient Verse of Altepa',
-    [206]='Revenant Maiden',
-    [207]="Ve'Lugannon Palace",
-    [208]='Rabao',
-    [209]='Norg',
-    [210]="Tu'Lia",
-    [211]="Ro'Maeve",
-    [212]='Dash de Chocobo',
-    [213]='Hall of the Gods',
-    [214]='Eternal Oath',
-    [215]='Clash of Standards',
-    [216]='On this Blade',
-    [217]='Kindred Cry',
-    [218]='Depths of the Soul',
-    [219]='Onslaught',
-    [220]='Turmoil',
-    [221]='Moblin Menagerie - Movalpolos',
-    [222]='Faded Memories - Promyvion',
-    [223]='Conflict: March of the Hero',
-    [224]='Dusk and Dawn',
-    [225]="Words Unspoken - Pso'Xja",
-    [226]='Conflict: You Want to Live Forever?',
-    [227]='Sunbreeze Shuffle',
-    [228]="Gates of Paradise - The Garden of Ru'Hmet",
-    [229]='Currents of Time',
-    [230]='A New Horizon - Tavnazian Archipelago',
-    [231]='Celestial Thunder',
-    [232]='The Ruler of the Skies',
-    [233]="The Celestial Capital - Al'Taieu",
-    [234]='Happily Ever After',
-    [235]='First Ode: Nocturne of the Gods',
-    [236]='Fourth Ode: Clouded Dawn',
-    [237]='Third Ode: Memoria de la Stona',
-    [238]='A New Morning',
-    [239]='Jeuno -Starlight Celebration-',
-    [240]='Second Ode: Distant Promises',
-    [241]='Fifth Ode: A Time for Prayer',
-    [242]='Unity',
-    [243]="Grav'iton",
-    [244]='Revenant Maiden',
-    [245]='The Forgotten City - Tavnazian Safehold',
-    [246]='March of the Allied Forces',
-    [247]='Roar of the Battle Drums',
-    [248]='Young Griffons in Flight',
-    [249]='Run Maggot, Run!',
-    [250]='Under a Clouded Moon',
-    [251]='Autumn Footfalls',
-    [252]='Flowers on the Battlefield',
-    [253]='Echoes of a Zypher',
-    [254]='Griffons Never Die',
-    [900]='Distant Worlds'
-};
-
--- Sort songs alphabetically
-local sorted_songs = {};
-for id, name in pairs(songs) do
-    table.insert(sorted_songs, { id = id, name = name });
+local songs_sorted = {};
+for _, song in ipairs(data.songs_sorted_original) do
+	if(not song.blacklisted) then 
+		table.insert(songs_sorted, {id=song.id, name=song.name})
+	end
 end
 
-table.sort(sorted_songs, function(a, b) return a.name < b.name end);
+local is_imgui_open = false;
+local current_song = 0
+local current_song_replacer = 0;
+local start_time = os.clock()
+local currentSongID = 0
+local overwriteDeathSong = false;
 
-local selected_music_type = 0;
-local selected_song = sorted_songs[1].id;
-local apply_to_all = true; -- Default to true
-local is_open = false;
-local is_zoning = false;
+local autoPlayTypeOptions = {loop="Loop", autoNext="AutoNext", autoShuffle="AutoShuffle"}
+local imguiAutoPlayTypeOptions = {{type=autoPlayTypeOptions.loop}, {type=autoPlayTypeOptions.autoNext}, {type=autoPlayTypeOptions.autoShuffle}}
+local autoPlayType = autoPlayTypeOptions.loop
+
+local imgui_SFX_vol = {100};
+local imgui_BGM_vol = {100};
+
 local dropdown_search_filter = "";
 
-local function SetMusicPacket(music_type, song)
-    local packetManager = AshitaCore:GetPacketManager();
-    local newPacket = (struct.pack('bbbbhh', 0x05F, 0x01, 0x00, 0x00, music_type, song)):totable();
-    packetManager:AddIncomingPacket(0x05F, newPacket);
+
+local config = T{
+    get     = nil,
+    set     = nil,
+};
+
+ffi.cdef[[
+    typedef int32_t (__cdecl* get_config_value_t)(int32_t);
+    typedef int32_t (__cdecl* set_config_value_t)(int32_t, int32_t);
+]];
+
+local function get_volume_sfx()
+	if(not config.get) then
+		print("Failed to get volume, get function invalid pointer");
+		return;
+	end	
+	return tonumber(config.get(9))
 end
 
--- Packet handler for zone-in and music updates
-ashita.events.register('packet_in', 'packet_in_cb', function(e)
-    if (e.id == 0x0A) then
-        print('Zone in detected. Resetting to selected music.');
-        is_zoning = true;
-        if apply_to_all then
-            for music_type = 0, 7 do
-                SetMusicPacket(music_type, selected_song);
-            end
-        else
-            SetMusicPacket(selected_music_type, selected_song);
-        end
-    end
-    if (e.id == 0x5F and not is_zoning) then
-        local current_music_type = struct.unpack('b', e.data, 0x04 + 1);
-        local current_song = struct.unpack('H', e.data, 0x06 + 1);
+local function get_volume_bgm()
+	if(not config.get) then
+		print("Failed to get volume, get function invalid pointer");
+		return;
+	end	
+	
+	return tonumber(config.get(10))
+end
 
-        if selected_song ~= current_song then
-            print(string.format('Intercepted Music Update: Changing from %s to %s.', songs[current_song] or 'Unknown', songs[selected_song]));
-            ashita.bits.pack_be(e.data_modified_raw, 0x06 * 8, 16, selected_song);
+ashita.events.register('load', 'load_cb', function ()
+    -- Obtain the needed function pointers..
+    local ptr = ashita.memory.find('FFXiMain.dll', 0, '8B0D????????85C974??8B44240450E8????????C383C8FFC3', 0, 0);
+    config.get = ffi.cast('get_config_value_t', ptr);
+    config.set = ffi.cast('set_config_value_t', ashita.memory.find('FFXiMain.dll', 0, '85C974??8B4424088B5424045052E8????????C383C8FFC3', -6, 0));
+	assert(config.get ~= nil, chat.header('config'):append(chat.error('Error: Failed to locate required \'get\' function pointer.')));
+    assert(config.set ~= nil, chat.header('config'):append(chat.error('Error: Failed to locate required \'set\' function pointer.')));
+
+	imgui_SFX_vol[1] = get_volume_sfx();
+	imgui_BGM_vol[1] = get_volume_bgm();	
+end);
+
+local function set_all_music()
+	local song_id = currentSongID
+	if not song_id then return end
+	song_id = tonumber(song_id);
+    if not data.song_id_to_info[song_id].name then print(string.format('\30\70Invalid song_id: %s', string.format(song_id))); end;
+
+    -- GP_SERV_COMMAND_MUSIC
+    local op_code = 0x05F;
+    local size = 0x08;
+    local sync = 0x0000;	
+
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 0, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 1, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 2, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 3, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 4, song_id_fake):totable());
+	if (overwriteDeathSong) then 
+		packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 5, song_id_fake):totable());
+	end	
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 6, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 7, song_id_fake):totable());
+
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 0, song_id):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 1, song_id):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 2, song_id):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 3, song_id):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 4, song_id):totable());
+	if (overwriteDeathSong) then 
+		packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 5, song_id):totable());
+	end	
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 6, song_id):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 7, song_id):totable());
+end
+
+local function set_all_music_fake()
+    -- GP_SERV_COMMAND_MUSIC
+    local op_code = 0x05F;
+    local size = 0x08;
+    local sync = 0x0000;		
+
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 0, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 1, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 2, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 3, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 4, song_id_fake):totable());
+	if (overwriteDeathSong) then 
+		packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 5, song_id_fake):totable());
+	end	
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 6, song_id_fake):totable());
+	packetManager:AddIncomingPacket(op_code, struct.pack('BBHHH', op_code, size, sync, 7, song_id_fake):totable());
+
+	
+end
+
+--min:0, max:100, default:100
+local function set_volume_SFX(newVol)
+	if(not config.set) then
+		print("Failed to set volume, set function invalid pointer")
+		return
+	end
+	if(not newVol) then 
+		print("Failed to set volume, newVol nil")
+		return
+	end
+	newVol = tonumber(newVol)	
+	config.set(9, math.clamp(newVol, 0, 100))
+end
+
+--min:0, max:100, default:100
+local function set_volume_BGM(newVol)
+	if(not config.set) then
+		print("Failed to set volume, set function invalid pointer")
+		return
+	end
+	if(not newVol) then 
+		print("Failed to set volume, newVol nil")
+		return
+	end
+	newVol = tonumber(newVol)
+	config.set(10, math.clamp(newVol, 0, 100))
+end
+
+local function display_help()
+	print(string.format('\30\70SetBGM imgui window: /setbgm'))
+end;
+
+ashita.events.register('command', 'command_cb', function(e)
+    local args = e.command:args();
+    
+    if (args[1]:lower() == "/setbgm") then
+		is_imgui_open = not is_imgui_open;
+        return true;
+    else
+        return false;
+    end;
+end);
+
+local function NowPlayingDelayed()
+	start_time = os.clock()
+	set_all_music()	
+	local l = data.song_id_to_info[currentSongID].length_in_seconds		
+	if(autoPlayType == autoPlayTypeOptions.loop) then
+		print(chat.header('SetBGM') .. chat.colors.Lime..data.song_id_to_info[currentSongID].name ..' ('..autoPlayType..')'.. chat.colors.Reset);
+	else
+		print(chat.header('SetBGM') .. chat.colors.Lime..data.song_id_to_info[currentSongID].name.." {"..math.floor(l / 60).."m "..(l % 60).."s".."}"..' ('..autoPlayType..')'.. chat.colors.Reset);
+	end
+end
+
+local function NowPlaying()	
+	set_all_music_fake();
+	NowPlayingDelayed:once(.9);
+end
+
+ashita.events.register('packet_in', 'packet_in_cb', function(e)
+    if(e.id == 0x000A) then        		    		
+		ashita.bits.pack_be(e.data_modified_raw, currentSongID, 0x56, 0, 16);
+		ashita.bits.pack_be(e.data_modified_raw, currentSongID, 0x58, 0, 16);
+        ashita.bits.pack_be(e.data_modified_raw, currentSongID, 0x5A, 0, 16);
+        ashita.bits.pack_be(e.data_modified_raw, currentSongID, 0x5C, 0, 16);
+		ashita.bits.pack_be(e.data_modified_raw, currentSongID, 0x5E, 0, 16);		
+		
+
+		local moghouse = struct.unpack('b', e.data, 0x80 + 1)
+        if moghouse == 1 then            			
+			NowPlaying:once(.1);
         end
-    end
+    end	
+	-- if(e.id == 0x005F) then			
+	-- end
+	if(e.id == 0x0060) then
+		ashita.bits.pack_be(e.data_modified_raw, 0, 0x04, 0, 16);
+	end
 end);
 
 -- Blue and White Theme Styles
@@ -326,10 +263,34 @@ local function PopBlueWhiteStyles()
     end
 end
 
--- Render the IMGUI window
-ashita.events.register('d3d_present', 'present_callback', function()
-    -- If our window is not supposed to be open, do nothing.
-    if not is_open then
+ashita.events.register('d3d_present', 'present_cb', function ()		
+	local timeDif = os.clock() - start_time;
+	if(current_song ~= 0 and autoPlayType and timeDif >= data.song_id_to_info[currentSongID].length_in_seconds) then
+		if(autoPlayType == autoPlayTypeOptions.autoNext) then
+			current_song = current_song + 1;
+			currentSongID = songs_sorted[current_song% (#songs_sorted+1)].id;
+			
+			if current_song > #songs_sorted then current_song = 1 end		
+			NowPlaying();
+		elseif(autoPlayType == autoPlayTypeOptions.autoShuffle) then
+			--TODO: Better shuffling than this, so that we don't get repeat songs ever in a session.
+			local count = 0
+			local count_max = 200
+			while(true) do
+				local new_song_index = math.random(#songs_sorted)
+				if (new_song_index ~= current_song) then 
+					current_song = new_song_index
+					break
+				end
+				if(count >= count_max) then break end
+				count = count + 1
+			end
+			currentSongID = songs_sorted[current_song].id;		
+			NowPlaying();			
+		end			
+	end
+
+	if not is_imgui_open then				
         return
     end
 
@@ -339,86 +300,71 @@ ashita.events.register('d3d_present', 'present_callback', function()
     -- ImGuiWindowFlags_AlwaysAutoResize => auto-resize to fit content
     -- ImGuiWindowFlags_NoCollapse       => hides the collapse arrow
     local windowFlags = bit.bor(ImGuiWindowFlags_AlwaysAutoResize, ImGuiWindowFlags_NoCollapse)
-
-    -- Optionally set constraints so the window starts small but can grow:
-    imgui.SetNextWindowSizeConstraints({200, 100}, {600, 800})
-
-    -- Create a table containing our boolean so ImGui can update it if "X" is clicked.
-    local is_open_ref = { is_open }
-
-    -- IMPORTANT: pass is_open_ref (not is_open) to imgui.Begin
-    if imgui.Begin('Set Background Music', is_open_ref, windowFlags) then
-
-        -- Apply to all checkbox
-        local apply_to_all_ref = { apply_to_all }
-        if imgui.Checkbox('Apply to All Music Types', apply_to_all_ref) then
-            apply_to_all = apply_to_all_ref[1]
-        end
-
-        -- Music type dropdown (disabled if Apply to All is checked)
-        if not apply_to_all then
-            if imgui.BeginCombo('Music Type', music_types[selected_music_type] or 'Unknown') then
-                for k, v in pairs(music_types) do
-                    if imgui.Selectable(v, selected_music_type == k) then
-                        selected_music_type = k
-                    end
-                end
-                imgui.EndCombo()
-            end
-        end
-
-        -- Song dropdown with integrated search
-        if imgui.BeginCombo('Song', songs[selected_song] or 'Unknown') then
-            -- Integrated search bar
+	
+    imgui.SetNextWindowSize({0, 0}, {1000, 1000})
+	
+    local is_imgui_open_ref = { is_imgui_open }
+		
+    if imgui.Begin('Set Background Music', is_imgui_open_ref, windowFlags) then		        
+        if imgui.BeginCombo('Song', data.song_id_to_info[currentSongID] and data.song_id_to_info[currentSongID].name or '---------') then            
             local search_ref = { dropdown_search_filter }
             if imgui.InputText('##Search', search_ref, 256) then
                 dropdown_search_filter = search_ref[1]
             end
+            
+            for i, song_entry in ipairs(songs_sorted) do
+				local is_selected = (current_song_replacer == i)
 
-            -- Filter and display dropdown options
-            for _, song_entry in ipairs(sorted_songs) do
                 if dropdown_search_filter == ''
                     or song_entry.name:lower():find(dropdown_search_filter:lower(), 1, true)
                 then
-                    if imgui.Selectable(song_entry.name, selected_song == song_entry.id) then
-                        selected_song = song_entry.id
+                    if imgui.Selectable(song_entry.name, is_selected) then					
+                        currentSongID = song_entry.id
+						current_song_replacer = i
                     end
                 end
+				if is_selected then
+                	imgui.SetItemDefaultFocus()
+            	end
             end
             imgui.EndCombo()
         end
 
-        -- Set Music button
-        if imgui.Button('Set Music') then
-            if apply_to_all then
-                print(string.format("Set music: %s for all music types", songs[selected_song]))
-                for music_type = 0, 7 do
-                    SetMusicPacket(music_type, selected_song)
-                end
-            else
-                print(string.format("Set music: %s for %s", songs[selected_song], music_types[selected_music_type]))
-                SetMusicPacket(selected_music_type, selected_song)
-            end
-        end
+		if imgui.BeginCombo('Autoplay Type', autoPlayType or 'Unknown') then
+			for i, option in ipairs(imguiAutoPlayTypeOptions) do
+				if imgui.Selectable(option.type, autoPlayType == option.type) then
+					autoPlayType = option.type					
+				end
+			end
+			imgui.EndCombo()
+		end			
 
-    end
-    -- Close the window
-    imgui.End()
+		if(imgui.Checkbox('Overwrite Death Music', {overwriteDeathSong}))then
+			overwriteDeathSong = not overwriteDeathSong
+		end
 
-    -- ImGui sets is_open_ref[1] to false if user clicked "X"
-    is_open = is_open_ref[1]
+		imgui.SameLine();						
+				
+        if imgui.Button('Play') then
+			if(current_song_replacer and current_song_replacer >= 1) then
+				current_song = (current_song_replacer >= 1 and current_song_replacer or current_song)				
+				NowPlaying();
+			else
+				print("SetBGM: Must choose song to play.")
+			end			
+        end		
+		
+		imgui.SliderFloat('SFX Volume', imgui_SFX_vol, 0, 100, '%.0f', ImGuiSliderFlags_AlwaysClamp);
+		set_volume_SFX(imgui_SFX_vol[1]);		
+		imgui.SliderFloat('BGM Volume', imgui_BGM_vol, 0, 100, '%.0f', ImGuiSliderFlags_AlwaysClamp);
+		set_volume_BGM(imgui_BGM_vol[1]);
+		
+		if (autoPlayType ~= autoPlayTypeOptions.loop and current_song ~= 0) then			
+			imgui.SliderFloat('Song Progress %', {(os.clock()-start_time)/(data.song_id_to_info[currentSongID].length_in_seconds)*100}, 0, 100, '%.1f', ImGuiSliderFlags_NoInput);
+		end
+	end
+	imgui.End()	
+    is_imgui_open = is_imgui_open_ref[1]
 
     PopBlueWhiteStyles()
-end)
-
--- Command to toggle the menu
-ashita.events.register('command', 'command_callback', function(e)
-    local args = {};
-    for word in string.gmatch(e.command, "[%S]+") do
-        table.insert(args, word);
-    end
-
-    if args[1] ~= '/setbgm' then return; end
-    is_open = not is_open;
-    e.blocked = true;
 end);
