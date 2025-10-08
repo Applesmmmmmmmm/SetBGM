@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 addon.name      = 'setbgm'
 addon.author    = 'Seth VanHeulen (Acacia@Odin) | Converted by Shinzaku | Ashita V4 port by Apples_mmmmmmmm'
-addon.version   = '1.2.8'
+addon.version   = '1.2.9'
 addon.desc      = [[/setbgm opens an ImGUI window to set music in loop or autoplay, sequentially or randomly.]]
 addon.link    = 'https://github.com/Applesmmmmmmmm/SetBGM';
 
@@ -197,19 +197,20 @@ end);
 
 local function NowPlayingDelayed()
 	start_time = os.clock()
-	SetAllMusic()	
+	SetAllMusic();
+end
+
+local function NowPlaying()
+	if(s.current_song_ID == 0) then return; end
+	
+	SetAllMusicFake();	
+	NowPlayingDelayed:once(.9);
 	local l = data.song_ID_to_info[s.current_song_ID].length_in_seconds		
 	if(s.auto_play_type == auto_play_type_options.loop) then
 		print(chat.header('SetBGM') .. chat.colors.Lime..data.song_ID_to_info[s.current_song_ID].name ..' ('..s.auto_play_type..')'.. chat.colors.Reset);
 	else
 		print(chat.header('SetBGM') .. chat.colors.Lime..data.song_ID_to_info[s.current_song_ID].name.." {"..math.floor(l / 60).."m "..(l % 60).."s".."}"..' ('..s.auto_play_type..')'.. chat.colors.Reset);
 	end
-end
-
-local function NowPlaying()
-	if(s.current_song_ID == 0) then return; end
-	SetAllMusicFake();
-	NowPlayingDelayed:once(.9);
 end
 
 ashita.events.register('packet_in', 'packet_in_cb', function(e)
