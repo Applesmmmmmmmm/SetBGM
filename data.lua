@@ -128,7 +128,7 @@ local data = T{
 		[81]  = {name = 'Isle of the Gods', length_in_seconds= 4*60 + 02},
 		[239] = {name = 'Jeuno -Starlight Celebration-', length_in_seconds= 5*60 + 10},
 		[149] = {name = 'Jeweled Boughs', length_in_seconds= 4*60 + 22},
-		[135] = {name = 'Kazham', length_in_seconds= 2*60 + 40},
+		[135] = {name = 'Kazham', length_in_seconds= 2*60 + 25},
 		[62]  = {name = 'Keepers of the Wild', length_in_seconds= 3*60 + 38},
 		[217] = {name = 'Kindred Cry', length_in_seconds= 3*60 + 24},
 		[49]  = {name = 'Luck of the Mog', length_in_seconds= 3*60 + 53},

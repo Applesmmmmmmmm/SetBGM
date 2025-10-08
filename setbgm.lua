@@ -32,7 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 addon.name      = 'setbgm'
 addon.author    = 'Seth VanHeulen (Acacia@Odin) | Converted by Shinzaku | Ashita V4 port by Apples_mmmmmmmm'
-addon.version   = '1.2.9'
+addon.version   = '1.2.10'
 addon.desc      = [[/setbgm opens an ImGUI window to set music in loop or autoplay, sequentially or randomly.]]
 addon.link    = 'https://github.com/Applesmmmmmmmm/SetBGM';
 
@@ -57,6 +57,7 @@ local auto_play_type_options = {loop="Loop", autoNext="AutoNext", autoShuffle="A
 local imgui_auto_play_type_options = {{type=auto_play_type_options.loop}, {type=auto_play_type_options.autoNext}, {type=auto_play_type_options.autoShuffle}};
 
 local is_playing = false;
+local anti_spam = false;
 
 local dropdown_search_filter = "";
 
@@ -198,15 +199,18 @@ end);
 local function NowPlayingDelayed()
 	start_time = os.clock()
 	SetAllMusic();
+	anti_spam = false;
 end
 
 local function NowPlaying()
-	if(s.current_song_ID == 0) then return; end
-	
+	if(s.current_song == 0 or anti_spam) then return; end
+	s.current_song_ID = songs_sorted[s.current_song% (#songs_sorted+1)].id;
+	s.current_song_replacer =s.current_song;
+	anti_spam = true;	
 	SetAllMusicFake();	
 	NowPlayingDelayed:once(.9);
 	local l = data.song_ID_to_info[s.current_song_ID].length_in_seconds		
-	if(s.auto_play_type == auto_play_type_options.loop) then
+	if(s.auto_play_type == auto_play_type_options.loop) then		
 		print(chat.header('SetBGM') .. chat.colors.Lime..data.song_ID_to_info[s.current_song_ID].name ..' ('..s.auto_play_type..')'.. chat.colors.Reset);
 	else
 		print(chat.header('SetBGM') .. chat.colors.Lime..data.song_ID_to_info[s.current_song_ID].name.." {"..math.floor(l / 60).."m "..(l % 60).."s".."}"..' ('..s.auto_play_type..')'.. chat.colors.Reset);
@@ -266,14 +270,12 @@ end);
 
 ashita.events.register('d3d_present', 'present_cb', function ()	
 	local timeDif = os.clock() - start_time;
-	if(s.play_at_launch and not is_playing and (current_song and current_song > 0)) then
-		s.current_song_ID = songs_sorted[current_song].id;
+	if(s.play_at_launch and not is_playing and (current_song and current_song > 0)) then		
 		NowPlaying();
 		is_playing = true;
 	elseif(s.current_song ~= 0 and s.auto_play_type and timeDif >= data.song_ID_to_info[s.current_song_ID].length_in_seconds) then
 		if(s.auto_play_type == auto_play_type_options.autoNext) then
-			s.current_song = s.current_song + 1;
-			s.current_song_ID = songs_sorted[s.current_song% (#songs_sorted+1)].id;			
+			s.current_song = s.current_song + 1;						
 			if s.current_song > #songs_sorted then s.current_song = 1; end		
 			NowPlaying();
 		elseif(s.auto_play_type == auto_play_type_options.autoShuffle) then
@@ -288,8 +290,7 @@ ashita.events.register('d3d_present', 'present_cb', function ()
 				end
 				if(count >= count_max) then break; end
 				count = count + 1;
-			end
-			s.current_song_ID = songs_sorted[s.current_song].id;		
+			end						
 			NowPlaying();
 		end			
 	end
@@ -345,7 +346,7 @@ ashita.events.register('d3d_present', 'present_cb', function ()
         if imgui.Button('Play', {-1, 0}) then
 			if(s.current_song_replacer and s.current_song_replacer >= 1) then
 				s.current_song = (s.current_song_replacer >= 1 and s.current_song_replacer or s.current_song);
-				NowPlaying();				
+				NowPlaying();
 			else
 				print("SetBGM: Must choose song to play.");
 			end
